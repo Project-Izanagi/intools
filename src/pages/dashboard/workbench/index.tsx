@@ -27,7 +27,7 @@ function Workbench() {
       </Row>
       <Row gutter={[16, 16]} className="mt-4" justify="center">
         <Col span={24} md={24}>
-          <Title level={2}>Our Services</Title>
+          <Title level={2}>Our Products</Title>
         </Col>
         {/* <Col span={24} md={8}>
           <Space direction="vertical" size="middle" className="h-full w-full">
@@ -58,7 +58,7 @@ function Workbench() {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} className="mt-4" justify="center">
+      {/* <Row gutter={[16, 16]} className="mt-4" justify="center">
         <Col span={24} md={12} lg={8}>
           <CurrentDownload />
         </Col>
@@ -84,7 +84,7 @@ function Workbench() {
         <Col span={24} md={12}>
           <TopAuthor />
         </Col>
-      </Row>
+      </Row> */}
     </>
   );
 }

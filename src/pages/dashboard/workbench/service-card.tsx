@@ -1,13 +1,18 @@
+import { Button } from 'antd';
+
 import Card from '@/components/card';
+import { useThemeToken } from '@/theme/hooks';
 
 type Props = {
   title?: string;
   increase?: boolean;
-  percent?: string;
+  path?: string;
   description?: string;
   chartData?: number[];
 };
-export default function ServicesCard({ title, increase, description, percent, chartData }: Props) {
+
+export default function ServicesCard({ title, increase, description, path, chartData }: Props) {
+  const themeToken = useThemeToken();
   return (
     <Card>
       <div className="flex-grow">
@@ -24,6 +29,12 @@ export default function ServicesCard({ title, increase, description, percent, ch
           </div>
         </div> */}
         <h5 className="text-sm font-medium">{description}</h5>
+        <Button
+          className="font-mediumtext-black m-auto mt-2 flex items-center justify-center rounded-md px-2 py-1 shadow-none md:m-0"
+          style={{ backgroundColor: themeToken.colorPrimary }}
+        >
+          Explore
+        </Button>
       </div>
     </Card>
   );
