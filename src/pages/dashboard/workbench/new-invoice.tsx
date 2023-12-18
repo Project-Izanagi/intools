@@ -103,7 +103,7 @@ export default function NewInvoice() {
       </header>
       <main className="w-full">
         <Scrollbar>
-          <Table columns={columns} dataSource={data} />
+          <Table columns={columns} dataSource={data} scroll={{ y: `calc(100vh - 250px)` }} />
         </Scrollbar>
       </main>
     </Card>

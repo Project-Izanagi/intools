@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react';
 import Highlighter from 'react-highlight-words';
 
 import CardComponent from '@/components/card';
-import { IconButton, Iconify } from '@/components/icon';
 import Scrollbar from '@/components/scrollbar';
 
 import './index.css';
@@ -228,13 +227,13 @@ export default function NewInvoice() {
   }, []);
 
   const columns: ColumnsType<DataType> = [
-    {
-      title: 'No',
-      dataIndex: 'id',
-      key: 'id',
-      sorter: false,
-      render: (text) => <span>{text}</span>,
-    },
+    // {
+    //   title: 'No',
+    //   dataIndex: 'id',
+    //   key: 'id',
+    //   sorter: false,
+    //   render: (text) => <span>{text}</span>,
+    // },
     {
       title: 'Plant',
       dataIndex: 'plant',
@@ -272,7 +271,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text}</span>,
     },
     {
-      title: 'Capacity',
+      title: 'Capacity (W)',
       dataIndex: 'specifications',
       key: 'capacity',
       defaultSortOrder: 'ascend',
@@ -280,7 +279,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.capacity}</span>,
     },
     {
-      title: 'Voltage',
+      title: 'Voltage (V)',
       dataIndex: 'specifications',
       key: 'voltage',
       defaultSortOrder: 'ascend',
@@ -288,7 +287,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.voltage}</span>,
     },
     {
-      title: 'Current',
+      title: 'Current (A)',
       dataIndex: 'specifications',
       key: 'current',
       defaultSortOrder: 'ascend',
@@ -304,7 +303,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.rpm}</span>,
     },
     {
-      title: 'Shaft Diameter',
+      title: 'Shaft Diameter (mm)',
       dataIndex: 'size',
       key: 'shaft_diameter',
       defaultSortOrder: 'ascend',
@@ -312,7 +311,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.shaft_diameter}</span>,
     },
     {
-      title: 'Base Width',
+      title: 'Base Width (mm)',
       dataIndex: 'size',
       key: 'base_width',
       defaultSortOrder: 'ascend',
@@ -320,7 +319,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.base_width}</span>,
     },
     {
-      title: 'Base Length',
+      title: 'Base Length (mm)',
       dataIndex: 'size',
       key: 'base_length',
       defaultSortOrder: 'ascend',
@@ -328,7 +327,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.base_length}</span>,
     },
     {
-      title: 'C',
+      title: 'C (mm)',
       dataIndex: 'size',
       key: 'c',
       defaultSortOrder: 'ascend',
@@ -336,7 +335,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.c}</span>,
     },
     {
-      title: 'E',
+      title: 'E (mm)',
       dataIndex: 'size',
       key: 'e',
       defaultSortOrder: 'ascend',
@@ -344,7 +343,7 @@ export default function NewInvoice() {
       render: (text) => <span>{text.e}</span>,
     },
     {
-      title: 'H',
+      title: 'H (mm)',
       dataIndex: 'size',
       key: 'h',
       defaultSortOrder: 'ascend',
@@ -559,6 +558,7 @@ export default function NewInvoice() {
                 showSizeChanger: true,
                 pageSizeOptions: ['20', '25', '30'],
               }}
+              scroll={{ y: `calc(100vh - 250px)` }}
             />
           </Scrollbar>
         </main>
