@@ -9,5 +9,5 @@ export const routes = [
   moduleRoutes,
   mainRoutes,
   // No match 404
-  { path: '*', element: <Navigate to="/404" replace /> },
+  { path: '*', element: <Navigate to="/home" replace /> },
 ];

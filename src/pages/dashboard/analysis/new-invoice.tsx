@@ -1,12 +1,15 @@
-import { Input, Space, Typography } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import { Button, Input, Space, Typography, Card } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Highlighter from 'react-highlight-words';
 
-import Card from '@/components/card';
+import CardComponent from '@/components/card';
 import { IconButton, Iconify } from '@/components/icon';
 import Scrollbar from '@/components/scrollbar';
 
 import './index.css';
+import SearchForm from './search-form';
 
 interface DataType {
   id: number;
@@ -46,27 +49,162 @@ interface PICProfile {
 }
 
 export default function NewInvoice() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filteredInfo, setFilteredInfo] = useState({});
-  const [sortedInfo, setSortedInfo] = useState({});
-  // const { data } = useFetchData();
-
   const [data, setData] = useState<DataType[] | []>();
-  const [dataSource, setDataSource] = useState(data);
-  const [value, setValue] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [searchedColumn, setSearchedColumn] = useState('');
+  const searchInput = useRef(null);
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+  const handleReset = (clearFilters) => {
+    clearFilters();
+    setSearchText('');
+  };
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+      <div
+        style={{
+          padding: 8,
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{
+            marginBottom: 8,
+            display: 'block',
+          }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({
+                closeDropdown: false,
+              });
+              setSearchText(selectedKeys[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined
+        style={{
+          color: filtered ? '#1677ff' : undefined,
+        }}
+      />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{
+            backgroundColor: '#ffc069',
+            padding: 0,
+          }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ''}
+        />
+      ) : (
+        text
+      ),
+  });
 
-  const FilterByNameInput = (
-    <Input
-      placeholder="Search Name"
-      value={value}
-      onChange={(e) => {
-        const currValue = e.target.value;
-        setValue(currValue);
-        const filteredData = data?.filter((entry) => entry.name.includes(currValue));
-        setDataSource(filteredData);
-      }}
-    />
-  );
+  const handleDynamicSearch = (formData) => {
+    const queryParams = new URLSearchParams(formData);
+    fetch(
+      `http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?${queryParams}`,
+    )
+      .then((response) => response.json())
+      .then((json) => {
+        if (Array.isArray(json.response.data)) {
+          const newData = json.response.data || [];
+          setData(newData);
+        } else {
+          // Handle the case where the response is not an array
+          console.error('Invalid data format received from the API.');
+          setData([]);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setData([]); // Handle errors by setting data to an empty array
+      });
+  };
+
+  const handleCompatibilitySearch = (record) => {
+    const { specifications, size } = record;
+    const { voltage } = specifications;
+    const { e, h } = size;
+
+    // Perform compatibility search API call using voltage, e, and h
+    // Replace 'your-compatibility-api-endpoint' with the actual endpoint
+    fetch(
+      `http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?voltage=${voltage}&e=${e}&h=${h}`,
+    )
+      .then((response) => response.json())
+      .then((json) => {
+        if (Array.isArray(json.response.data)) {
+          const newData = json.response.data || [];
+          setData(newData);
+        } else {
+          // Handle the case where the response is not an array
+          console.error('Invalid data format received from the API.');
+          setData([]);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setData([]); // Handle errors by setting data to an empty array
+      });
+  };
 
   useEffect(() => {
     fetch('http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage')
@@ -74,7 +212,8 @@ export default function NewInvoice() {
       .then((json) => {
         if (Array.isArray(json.response.data)) {
           if (json.response.data.length > 0) {
-            setData(json.response.data);
+            const newData = json.response.data || []; // Use the returned data or an empty array if undefined
+            setData(newData);
           } else {
             console.error('Empty array received from the API.');
           }
@@ -87,10 +226,6 @@ export default function NewInvoice() {
       })
       .catch((error) => console.error(error));
   }, []);
-
-  // const listMaterials = data ?? [];
-
-  console.log(data?.length, Array.isArray(data), 'DATA: ', data);
 
   const columns: ColumnsType<DataType> = [
     {
@@ -105,6 +240,7 @@ export default function NewInvoice() {
       dataIndex: 'plant',
       key: 'plant',
       sortDirections: ['descend', 'ascend'],
+      ...getColumnSearchProps('plant'),
       sorter: (a, b) => a.plant.localeCompare(b.plant),
       render: (text) => <span>{text}</span>,
     },
@@ -113,106 +249,113 @@ export default function NewInvoice() {
       dataIndex: 'area',
       key: 'area',
       sortDirections: ['descend', 'ascend'],
+      ...getColumnSearchProps('area'),
       sorter: (a, b) => a.area.localeCompare(b.area),
       render: (text) => <span>{text}</span>,
     },
-    {
-      title: 'QCode',
-      dataIndex: 'qcode',
-      key: 'qcode',
-      sortDirections: ['descend', 'ascend'],
-      sorter: (a, b) => a.qcode.localeCompare(b.qcode),
-      render: (text) => <span>{text}</span>,
-    },
+    // {
+    //   title: 'QCode',
+    //   dataIndex: 'qcode',
+    //   key: 'qcode',
+    //   ...getColumnSearchProps('qcode'),
+    //   sortDirections: ['descend', 'ascend'],
+    //   sorter: (a, b) => a.qcode.localeCompare(b.qcode),
+    //   render: (text) => <span>{text}</span>,
+    // },
     {
       title: 'Material Name',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name'),
       sortDirections: ['descend', 'ascend'],
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (text) => <span>{text}</span>,
-    },
-    {
-      title: 'Category',
-      dataIndex: 'category',
-      key: 'category',
-      sorter: false,
       render: (text) => <span>{text}</span>,
     },
     {
       title: 'Capacity',
       dataIndex: 'specifications',
       key: 'capacity',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.specifications.capacity - b.specifications.capacity,
       render: (text) => <span>{text.capacity}</span>,
     },
     {
       title: 'Voltage',
       dataIndex: 'specifications',
       key: 'voltage',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.specifications.voltage - b.specifications.voltage,
       render: (text) => <span>{text.voltage}</span>,
     },
     {
       title: 'Current',
       dataIndex: 'specifications',
       key: 'current',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.specifications.current - b.specifications.current,
       render: (text) => <span>{text.current}</span>,
     },
     {
       title: 'RPM',
       dataIndex: 'specifications',
       key: 'rpm',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.specifications.rpm - b.specifications.rpm,
       render: (text) => <span>{text.rpm}</span>,
     },
     {
       title: 'Shaft Diameter',
       dataIndex: 'size',
       key: 'shaft_diameter',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.shaft_diameter - b.size.shaft_diameter,
       render: (text) => <span>{text.shaft_diameter}</span>,
     },
     {
       title: 'Base Width',
       dataIndex: 'size',
       key: 'base_width',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.base_width - b.size.base_width,
       render: (text) => <span>{text.base_width}</span>,
     },
     {
       title: 'Base Length',
       dataIndex: 'size',
       key: 'base_length',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.base_length - b.size.base_length,
       render: (text) => <span>{text.base_length}</span>,
     },
     {
       title: 'C',
       dataIndex: 'size',
       key: 'c',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.c - b.size.c,
       render: (text) => <span>{text.c}</span>,
     },
     {
       title: 'E',
       dataIndex: 'size',
       key: 'e',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.e - b.size.e,
       render: (text) => <span>{text.e}</span>,
     },
     {
       title: 'H',
       dataIndex: 'size',
       key: 'h',
-      sorter: false,
+      defaultSortOrder: 'ascend',
+      sorter: (a, b) => a.size.h - b.size.h,
       render: (text) => <span>{text.h}</span>,
     },
     {
       title: 'Maker',
       dataIndex: 'maker',
       key: 'maker',
+      ...getColumnSearchProps('maker'),
       sortDirections: ['descend', 'ascend'],
       sorter: (a, b) => a.maker.localeCompare(b.maker),
       render: (text) => <span>{text}</span>,
@@ -261,11 +404,9 @@ export default function NewInvoice() {
       title: 'Action',
       key: 'action',
       sorter: false,
-      render: () => (
+      render: (_, record) => (
         <Space size="middle">
-          <IconButton>
-            <Iconify icon="fontisto:more-v-a" />
-          </IconButton>
+          <Button onClick={() => handleCompatibilitySearch(record)}>Compatibility Search</Button>
         </Space>
       ),
     },
@@ -389,24 +530,39 @@ export default function NewInvoice() {
   // ];
 
   return (
-    <Card className="h-full w-full flex-col">
-      <header className="self-start">
-        <Typography.Title level={5}>Materials Summary</Typography.Title>
-      </header>
-      <main className="h-full w-full">
-        <Scrollbar>
-          <Table
-            rowKey={(record) => record.id}
-            columns={columns}
-            dataSource={data}
-            pagination={{
-              defaultPageSize: 5,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '30'],
-            }}
-          />
-        </Scrollbar>
-      </main>
-    </Card>
+    <>
+      <Card
+        style={{
+          width: '100%',
+          display: 'flex',
+          marginTop: 20,
+          boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)',
+        }}
+      >
+        <SearchForm onSearch={handleDynamicSearch} />
+      </Card>
+      <CardComponent className="mt-2 h-full w-full flex-col">
+        <header className="self-start">
+          <Typography.Title level={5}>Materials Summary</Typography.Title>
+        </header>
+        <main className="h-full w-full">
+          <Scrollbar>
+            <Table
+              locale={{
+                emptyText: 'No data available',
+              }}
+              rowKey={(record) => record.id}
+              columns={columns}
+              dataSource={data}
+              pagination={{
+                defaultPageSize: 10,
+                showSizeChanger: true,
+                pageSizeOptions: ['20', '25', '30'],
+              }}
+            />
+          </Scrollbar>
+        </main>
+      </CardComponent>
+    </>
   );
 }

@@ -60,7 +60,7 @@ export const useSignIn = () => {
       const { user, accessToken, refreshToken } = res;
       setUserToken({ accessToken, refreshToken });
       setUserInfo(user);
-      navigatge('/dashboard', { replace: true });
+      navigatge('/home', { replace: true });
 
       notification.success({
         message: t('sys.login.loginSuccessTitle'),

@@ -24,7 +24,7 @@ function Login() {
   // 判断用户是否有权限
   if (token.accessToken) {
     // 如果有授权，则跳转到首页
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   const gradientBg = Color(colorBgElevated).alpha(0.9).toString();
