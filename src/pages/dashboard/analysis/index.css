@@ -5,6 +5,15 @@
   height: -webkit-fill-available;
 }
 
+.ant-table-fixed {
+  table-layout: fixed;
+}
+
+.ant-table-tbody > tr > td {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
 /* .ant-modal-content {
   width: 20vw;
   height: calc(10vh - 2px) !important;

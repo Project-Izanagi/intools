@@ -1,5 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { Button, Input, Space, Typography, Card } from 'antd';
+import { Button, Input, Space, Typography, Card, Row, Modal } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
 import { useState, useEffect, useRef } from 'react';
 import Highlighter from 'react-highlight-words';
@@ -19,6 +19,10 @@ interface DataType {
   name: string;
   maker: string;
   // pic?: PICProfile;
+  frame: number;
+  installed_qty: number;
+  standby_qty: number;
+  spare_qty: number;
   specifications: Specification;
   size: Size;
 }
@@ -48,6 +52,10 @@ interface PICProfile {
 }
 
 export default function NewInvoice() {
+  const [resetSearch, setResetSearch] = useState(false);
+  const [openFrame, setOpenFrame] = useState(true);
+  const [openCapacity, setOpenCapacity] = useState(true);
+  const [modal, contextHolder] = Modal.useModal();
   const [data, setData] = useState<DataType[] | []>();
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
@@ -156,56 +164,7 @@ export default function NewInvoice() {
       ),
   });
 
-  const handleDynamicSearch = (formData) => {
-    const queryParams = new URLSearchParams(formData);
-    fetch(
-      `http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?${queryParams}`,
-    )
-      .then((response) => response.json())
-      .then((json) => {
-        if (Array.isArray(json.response.data)) {
-          const newData = json.response.data || [];
-          setData(newData);
-        } else {
-          // Handle the case where the response is not an array
-          console.error('Invalid data format received from the API.');
-          setData([]);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        setData([]); // Handle errors by setting data to an empty array
-      });
-  };
-
-  const handleCompatibilitySearch = (record) => {
-    const { specifications, size } = record;
-    const { voltage } = specifications;
-    const { e, h } = size;
-
-    // Perform compatibility search API call using voltage, e, and h
-    // Replace 'your-compatibility-api-endpoint' with the actual endpoint
-    fetch(
-      `http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?voltage=${voltage}&e=${e}&h=${h}`,
-    )
-      .then((response) => response.json())
-      .then((json) => {
-        if (Array.isArray(json.response.data)) {
-          const newData = json.response.data || [];
-          setData(newData);
-        } else {
-          // Handle the case where the response is not an array
-          console.error('Invalid data format received from the API.');
-          setData([]);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        setData([]); // Handle errors by setting data to an empty array
-      });
-  };
-
-  useEffect(() => {
+  const defaultSearch = () => {
     fetch('http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage')
       .then((response) => response.json())
       .then((json) => {
@@ -224,6 +183,80 @@ export default function NewInvoice() {
         }
       })
       .catch((error) => console.error(error));
+  };
+
+  const handleDynamicSearch = (formData) => {
+    const queryParams = new URLSearchParams(formData);
+    fetch(
+      `http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?${queryParams}`,
+    )
+      .then((response) => response.json())
+      .then((json) => {
+        if (Array.isArray(json.response.data)) {
+          const newData = json.response.data || [];
+          setData(newData);
+          console.log(data);
+        } else {
+          // Handle the case where the response is not an array
+          console.error('Invalid data format received from the API.');
+          setData([]);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setData([]); // Handle errors by setting data to an empty array
+      });
+  };
+
+  const handleCompatibilitySearch = (record, flag) => {
+    const { specifications, frame } = record;
+    const { capacity } = specifications;
+
+    const param = flag === 'capacity' ? `capacity=${capacity}` : `frame=${frame}`;
+    // Perform compatibility search API call using voltage, e, and h
+    // Replace 'your-compatibility-api-endpoint' with the actual endpoint
+    fetch(`http://127.0.0.1:8080/api/v1/intools/electra/materials/motor/high-voltage?${param}`)
+      .then((response) => response.json())
+      .then((json) => {
+        if (Array.isArray(json.response.data)) {
+          const newData = json.response.data || [];
+          setData(newData);
+        } else {
+          // Handle the case where the response is not an array
+          console.error('Invalid data format received from the API.');
+          setData([]);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setData([]); // Handle errors by setting data to an empty array
+      });
+  };
+
+  const countDownAfterSearch = () => {
+    let secondsToGo = 1;
+
+    const instance = modal.success({
+      centered: true,
+      title: 'Success',
+      content: `Total ${data?.length} found.`,
+    });
+
+    const timer = setInterval(() => {
+      secondsToGo -= 1;
+      instance.update({
+        content: `Total ${data?.length} found.`,
+      });
+    }, 1000);
+
+    setTimeout(() => {
+      clearInterval(timer);
+      instance.destroy();
+    }, secondsToGo * 1000);
+  };
+
+  useEffect(() => {
+    defaultSearch();
   }, []);
 
   const columns: ColumnsType<DataType> = [
@@ -265,90 +298,141 @@ export default function NewInvoice() {
       title: 'Material Name',
       dataIndex: 'name',
       key: 'name',
+      width: 160,
       ...getColumnSearchProps('name'),
       sortDirections: ['descend', 'ascend'],
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (text) => <span>{text}</span>,
     },
     {
-      title: 'Capacity (W)',
-      dataIndex: 'specifications',
-      key: 'capacity',
+      title: 'Frame',
+      dataIndex: 'frame',
+      key: 'frame',
       defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.specifications.capacity - b.specifications.capacity,
-      render: (text) => <span>{text.capacity}</span>,
+      sorter: (a, b) => a.frame - b.frame,
+      render: (text) => <span>{text}</span>,
     },
     {
-      title: 'Voltage (V)',
-      dataIndex: 'specifications',
-      key: 'voltage',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.specifications.voltage - b.specifications.voltage,
-      render: (text) => <span>{text.voltage}</span>,
+      title: 'Operation Status',
+      children: [
+        {
+          title: 'Installed',
+          dataIndex: 'installed_qty',
+          key: 'installed_qty',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.installed_qty - b.installed_qty,
+          render: (text) => <span>{text}</span>,
+        },
+        {
+          title: 'Standby',
+          dataIndex: 'standby_qty',
+          key: 'standby_qty',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.standby_qty - b.standby_qty,
+          render: (text) => <span>{text}</span>,
+        },
+        {
+          title: 'Spare',
+          dataIndex: 'spare_qty',
+          key: 'spare_qty',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.spare_qty - b.spare_qty,
+          render: (text) => <span>{text}</span>,
+        },
+      ],
     },
     {
-      title: 'Current (A)',
-      dataIndex: 'specifications',
-      key: 'current',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.specifications.current - b.specifications.current,
-      render: (text) => <span>{text.current}</span>,
+      title: 'Specifications',
+      children: [
+        {
+          title: 'Capacity (kW)',
+          dataIndex: 'specifications',
+          key: 'capacity',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.specifications.capacity - b.specifications.capacity,
+          render: (text) => <span>{text.capacity}</span>,
+        },
+        {
+          title: 'Voltage (V)',
+          dataIndex: 'specifications',
+          key: 'voltage',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.specifications.voltage - b.specifications.voltage,
+          render: (text) => <span>{text.voltage}</span>,
+        },
+        {
+          title: 'Current (A)',
+          dataIndex: 'specifications',
+          key: 'current',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.specifications.current - b.specifications.current,
+          render: (text) => <span>{text.current}</span>,
+        },
+        {
+          title: 'RPM',
+          dataIndex: 'specifications',
+          key: 'rpm',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.specifications.rpm - b.specifications.rpm,
+          render: (text) => <span>{text.rpm}</span>,
+        },
+      ],
     },
     {
-      title: 'RPM',
-      dataIndex: 'specifications',
-      key: 'rpm',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.specifications.rpm - b.specifications.rpm,
-      render: (text) => <span>{text.rpm}</span>,
-    },
-    {
-      title: 'Shaft Diameter (mm)',
-      dataIndex: 'size',
-      key: 'shaft_diameter',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.shaft_diameter - b.size.shaft_diameter,
-      render: (text) => <span>{text.shaft_diameter}</span>,
-    },
-    {
-      title: 'Base Width (mm)',
-      dataIndex: 'size',
-      key: 'base_width',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.base_width - b.size.base_width,
-      render: (text) => <span>{text.base_width}</span>,
-    },
-    {
-      title: 'Base Length (mm)',
-      dataIndex: 'size',
-      key: 'base_length',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.base_length - b.size.base_length,
-      render: (text) => <span>{text.base_length}</span>,
-    },
-    {
-      title: 'C (mm)',
-      dataIndex: 'size',
-      key: 'c',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.c - b.size.c,
-      render: (text) => <span>{text.c}</span>,
-    },
-    {
-      title: 'E (mm)',
-      dataIndex: 'size',
-      key: 'e',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.e - b.size.e,
-      render: (text) => <span>{text.e}</span>,
-    },
-    {
-      title: 'H (mm)',
-      dataIndex: 'size',
-      key: 'h',
-      defaultSortOrder: 'ascend',
-      sorter: (a, b) => a.size.h - b.size.h,
-      render: (text) => <span>{text.h}</span>,
+      title: 'Size (mm)',
+      children: [
+        {
+          title: 'Shaft Diameter',
+          dataIndex: 'size',
+          key: 'shaft_diameter',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.shaft_diameter - b.size.shaft_diameter,
+          render: (text) => <span>{text.shaft_diameter}</span>,
+        },
+        {
+          title: 'Base Width',
+          dataIndex: 'size',
+          key: 'base_width',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.base_width - b.size.base_width,
+          render: (text) => <span>{text.base_width}</span>,
+        },
+        {
+          title: 'Base Length',
+          dataIndex: 'size',
+          key: 'base_length',
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.base_length - b.size.base_length,
+          render: (text) => <span>{text.base_length}</span>,
+        },
+        {
+          title: 'C',
+          dataIndex: 'size',
+          key: 'c',
+          width: 60,
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.c - b.size.c,
+          render: (text) => <span>{text.c}</span>,
+        },
+        {
+          title: 'E',
+          dataIndex: 'size',
+          key: 'e',
+          width: 60,
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.e - b.size.e,
+          render: (text) => <span>{text.e}</span>,
+        },
+        {
+          title: 'H',
+          dataIndex: 'size',
+          key: 'h',
+          width: 60,
+          defaultSortOrder: 'ascend',
+          sorter: (a, b) => a.size.h - b.size.h,
+          render: (text) => <span>{text.h}</span>,
+        },
+      ],
     },
     {
       title: 'Maker',
@@ -400,13 +484,62 @@ export default function NewInvoice() {
     //   },
     // },
     {
-      title: 'Action',
+      title: 'Compatibility Search  ',
       key: 'action',
       sorter: false,
+      fixed: 'right',
+      width: 150,
       render: (_, record) => (
-        <Space size="middle">
-          <Button onClick={() => handleCompatibilitySearch(record)}>Compatibility Search</Button>
-        </Space>
+        <Row gutter={[16, 16]}>
+          {openFrame && (
+            <Space size="middle">
+              <Button
+                className="w-32"
+                onClick={() => {
+                  handleCompatibilitySearch(record, 'frame');
+                  countDownAfterSearch();
+                  setResetSearch(true);
+                  setOpenCapacity(false);
+                }}
+              >
+                By Frame
+              </Button>
+            </Space>
+          )}
+          {openCapacity && (
+            <Space size="middle">
+              <Button
+                className="w-32"
+                onClick={() => {
+                  handleCompatibilitySearch(record, 'capacity');
+                  countDownAfterSearch();
+                  setResetSearch(true);
+                  setOpenFrame(false);
+                }}
+              >
+                By Capacity
+              </Button>
+            </Space>
+          )}
+          {resetSearch && (
+            <Space size="middle">
+              <Button
+                className="w-32"
+                danger
+                onClick={() => {
+                  defaultSearch();
+                  countDownAfterSearch();
+                  setResetSearch(false);
+                  setOpenCapacity(true);
+                  setOpenFrame(true);
+                }}
+              >
+                Reset
+              </Button>
+            </Space>
+          )}
+          {contextHolder}
+        </Row>
       ),
     },
   ];
@@ -540,10 +673,13 @@ export default function NewInvoice() {
       >
         <SearchForm onSearch={handleDynamicSearch} />
       </Card>
-      <CardComponent className="mt-2 h-full w-full flex-col">
-        <header className="self-start">
-          <Typography.Title level={5}>Materials Summary</Typography.Title>
+      <CardComponent className="mt-2 h-fit w-full flex-col">
+        <header className="mb-2">
+          <Typography.Title level={3}>Materials Summary</Typography.Title>
         </header>
+        <div className="mb-2 self-start">
+          <Typography.Title level={5}>Total Data: {data?.length}</Typography.Title>
+        </div>
         <main className="h-full w-full">
           <Scrollbar>
             <Table
@@ -554,9 +690,9 @@ export default function NewInvoice() {
               columns={columns}
               dataSource={data}
               pagination={{
-                defaultPageSize: 10,
+                defaultPageSize: 20,
                 showSizeChanger: true,
-                pageSizeOptions: ['20', '25', '30'],
+                pageSizeOptions: ['5', '10', '20', '30', '50', '100'],
               }}
               scroll={{ y: `calc(100vh - 250px)` }}
             />
