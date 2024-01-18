@@ -694,7 +694,7 @@ export default function NewInvoice() {
                 showSizeChanger: true,
                 pageSizeOptions: ['5', '10', '20', '30', '50', '100'],
               }}
-              scroll={{ y: `calc(100vh - 250px)` }}
+              scroll={{ x: 1500, y: `calc(100vh - 250px)` }}
             />
           </Scrollbar>
         </main>

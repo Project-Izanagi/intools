@@ -47,11 +47,27 @@ const dashboard: AppRouteObject = {
           element: <Analysis />,
           meta: { label: 'sys.menu.highvoltage', key: '/electra/motor/highvoltage' },
         },
-        {
-          path: 'lowvoltage',
-          element: <Analysis />,
-          meta: { label: 'sys.menu.lowvoltage', key: '/electra/motor/lowvoltage' },
-        },
+        // {
+        //   path: 'lowvoltage',
+        //   element: <Analysis />,
+        //   meta: { label: 'sys.menu.lowvoltage', key: '/electra/motor/lowvoltage' },
+        // },
+        // {
+        //   path: 'manage',
+        //   element: <Analysis />,
+        //   meta: { label: 'sys.menu.manage', key: '/electra/motor/manage' },
+        //   children: [
+        //     {
+        //       index: true,
+        //       element: <Navigate to="manage" replace />,
+        //     },
+        //     {
+        //       path: 'lowvoltage',
+        //       element: <Analysis />,
+        //       meta: { label: 'sys.menu.lowvoltage', key: '/electra/motor/manage/lowvoltage' },
+        //     },
+        //   ],
+        // },
       ],
     },
   ],
